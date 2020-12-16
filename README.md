@@ -1,5 +1,4 @@
-# Supplementary material for the article 
-# _Fast covariance parameter estimation of spatial Gaussian process models using neural networks_
+# Supplementary material for the article: _Fast covariance parameter estimation of spatial Gaussian process models using neural networks_
 
 A pre-print is available on arXiv: ...
 
