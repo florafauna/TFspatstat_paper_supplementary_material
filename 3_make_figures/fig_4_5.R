@@ -116,7 +116,7 @@ data.frame(x=longi, y=rep(lati, each=length(longi)),
     ggplot(mapping=aes(x=x, y=y, fill=z)) +
     map_layers +
     scale_fill_gradientn(colors=viridis(256), na.value="gray") +
-    guides(fill = guide_colorbar(title = expression(log(lambda)),
+    guides(fill = guide_colorbar(title = expression(log(widehat(lambda))),
             barwidth = barwidth, barheight = barheight, label.position = "right", 
             legend.position = c(0, 0),  ticks.colour = "black",
             frame.colour="black")) -> p_geo_lambda
@@ -129,7 +129,7 @@ data.frame(x=longi, y=rep(lati, each=length(longi)),
     ggplot(mapping=aes(x=x, y=y, fill=z)) +
     map_layers + 
     scale_fill_gradientn(colors=viridis(256), na.value="gray") +
-    guides(fill = guide_colorbar(title = expression(log(theta)),
+    guides(fill = guide_colorbar(title = expression(log(widehat(theta))),
             barwidth = barwidth, barheight = barheight, label.position = "right", 
             legend.position = c(0, 0),  ticks.colour = "black",
             frame.colour="black")) -> p_geo_theta
@@ -144,7 +144,7 @@ data.frame(x=longi, y=rep(lati, each=length(longi)),
     scale_fill_stepsn(colors=rev(brewer.pal(5, "RdBu")), na.value="gray",
                       limits=c(-logLambda_maxdiff,logLambda_maxdiff),
                       breaks=c(seq(-2.7, 3, 1.8))) +
-    guides(fill = guide_colorbar(title = expression(log(lambda)),
+    guides(fill = guide_colorbar(title = expression(log(widehat(lambda))),
             barwidth = barwidth, barheight = barheight, label.position = "right", 
             legend.position = c(0, 0),  ticks.colour = "black",
             frame.colour="black")) -> p_geo_lambda_diff
@@ -162,7 +162,7 @@ data.frame(x=longi, y=rep(lati, each=length(longi)),
     scale_fill_stepsn(colors=rev(brewer.pal(5, "RdBu")), na.value="gray",
                       limits=c(-logTheta_maxdiff,logTheta_maxdiff),
                       breaks=c(seq(-.6, .6, .4))) +
-    guides(fill = guide_colorbar(title = expression(log(theta)),
+    guides(fill = guide_colorbar(title = expression(log(widehat(theta))),
             barwidth = barwidth, barheight = barheight, label.position = "right", 
             legend.position = c(0, 0),  ticks.colour = "black",
             frame.colour="black")) -> p_geo_theta_diff
@@ -170,7 +170,7 @@ data.frame(x=longi, y=rep(lati, each=length(longi)),
 
 scatter_lambda_range <- range(apply(cbind(logLambda_mle_test, logLambda_mvg_test), 1, range, na.rm=TRUE, finite=TRUE), na.rm=TRUE, finite=TRUE)
 
-data.frame(x=logLambda_mle_test, y=logLambda_mvg_test, what="log(lambda)") %>%
+data.frame(x=logLambda_mle_test, y=logLambda_mvg_test, what="log(widehat(lambda))") %>%
     ggplot(mapping=aes(x=x, y=y)) +
     facet_wrap(what~., labeller = label_parsed) +
     geom_point(size=.5, alpha=.1) +
@@ -183,7 +183,7 @@ data.frame(x=logLambda_mle_test, y=logLambda_mvg_test, what="log(lambda)") %>%
 
 
 scatter_theta_range <- range(apply(cbind(logTheta_mle_test, logTheta_mvg_test), 1, range, na.rm=TRUE, finite=TRUE), na.rm=TRUE, finite=TRUE)
-data.frame(x=logTheta_mle_test, y=logTheta_mvg_test, what="log(theta)") %>%
+data.frame(x=logTheta_mle_test, y=logTheta_mvg_test, what="log(widehat(theta))") %>%
     ggplot(mapping=aes(x=x, y=y)) +
     facet_wrap(what~., labeller = label_parsed) +
     geom_point(size=.5, alpha=.1) +
