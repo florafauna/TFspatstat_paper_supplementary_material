@@ -33,12 +33,12 @@ m <- dim(im_pred_y)[2]
 
 bg_colors <- brewer.pal(8, "Set1")[c(2,1)]
 dd_box_lambda <- rbind(data.frame(true=test_y[,1], est=im_pred_y[,1,1],
-                                  var="lambda", method="NI (symbol: o)"),
+                                  var="lambda", method="NF"),
                        data.frame(true=test_y[,1], est=vg_pred_y[,1,1],
-                                  var="lambda", method="NV (symbol: +)"),
+                                  var="lambda", method="NV"),
                        data.frame(true=test_y[,1], est=ml_pred_y[,1,1],
-                                  var="lambda", method="ML (symbol: x)"))
-dd_box_lambda$method <- factor(dd_box_lambda$method, levels=c("NI (symbol: o)","NV (symbol: +)", "ML (symbol: x)"))
+                                  var="lambda", method="ML"))
+dd_box_lambda$method <- factor(dd_box_lambda$method, levels=c("NF","NV", "ML"))
 dd_box_lambda$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "",
                    as.character(cut_interval(dd_box_lambda$true, 10))), ","),
                                         function(x) mean(as.numeric(x))))
@@ -61,10 +61,10 @@ dd_box_lambda %>%
     geom_abline(intercept=0, slope=0, color="red", linetype=2) -> p_box_lambda
 
 dd_box_theta <- rbind(
-    data.frame(true=test_y[,2], est=im_pred_y[,1,2], var="theta", method="NI (symbol: o)"),
-    data.frame(true=test_y[,2], est=vg_pred_y[,1,2], var="theta", method="NV (symbol: +)"),
-    data.frame(true=test_y[,2], est=ml_pred_y[,1,2], var="theta", method="ML (symbol: x)")) 
-dd_box_theta$method <- factor(dd_box_theta$method, levels=c("NI (symbol: o)","NV (symbol: +)","ML (symbol: x)"))
+    data.frame(true=test_y[,2], est=im_pred_y[,1,2], var="theta", method="NF"),
+    data.frame(true=test_y[,2], est=vg_pred_y[,1,2], var="theta", method="NV"),
+    data.frame(true=test_y[,2], est=ml_pred_y[,1,2], var="theta", method="ML")) 
+dd_box_theta$method <- factor(dd_box_theta$method, levels=c("NF","NV","ML"))
 dd_box_theta$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as.character(cut_interval(dd_box_theta$true, 10))), ","), function(x) mean(as.numeric(x))))
 theta_color_bin <- sort(unique(unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "",
                    as.character(cut_interval(dd_box_theta$true, 10))), ","),
@@ -84,68 +84,59 @@ dd_box_theta %>%
     geom_abline(intercept=0, slope=0, color="red", linetype=2) -> p_box_theta
 
 
-dd_box_lambda2 <- rbind(
-    data.frame(true=test_y[,1], est=c(im_pred_y[,,1]), var="lambda", method="NI",
-               replicate=rep(1:m, each=n)),
-    data.frame(true=test_y[,1], est=c(vg_pred_y[,,1]), var="lambda", method="NV",
-               replicate=rep(1:m, each=n)),
-    data.frame(true=test_y[,1], est=c(ml_pred_y[,,1]), var="lambda", method="ML",
-               replicate=rep(1:m, each=n)))
-dd_box_lambda2$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as.character(cut_interval(dd_box_lambda2$true, 2))), ","), function(x) mean(as.numeric(x))))
-dd_box_lambda2$true_bin_label <- factor(dd_box_lambda2$true_bin,
-                                        levels=sort(unique(dd_box_lambda2$true_bin), decreasing=TRUE),
-                                        labels=c("large", "small"))
-dd_box_lambda2$method <- factor(dd_box_lambda2$method, levels=c("NI", "NV", "ML"))
-dd_box_theta2 <- rbind(data.frame(true=test_y[,2], est=c(im_pred_y[,,2]), var="theta",
-                                  method="NI", replicate=rep(1:m, each=n)),
-                       data.frame(true=test_y[,2], est=c(vg_pred_y[,,2]), var="theta",
-                                  method="NV", replicate=rep(1:m, each=n)),
-                       data.frame(true=test_y[,2], est=c(ml_pred_y[,,2]), var="theta",
-                                  method="ML", replicate=rep(1:m, each=n)))
-dd_box_theta2$method <- factor(dd_box_theta2$method, levels=c("NI", "NV", "ML"))
-dd_box_theta2$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as.character(cut_interval(dd_box_theta2$true, 2))), ","), function(x) mean(as.numeric(x))))
-dd_box_theta2$true_bin_label <- factor(dd_box_theta2$true_bin,
-    levels=sort(unique(dd_box_theta2$true_bin), decreasing=TRUE), labels=c("large", "small"))
 
-dd_box_lambda2 %>%
+
+
+
+dd_box_lambda$true_bin2 <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as.character(cut_interval(dd_box_lambda$true, 2))), ","), function(x) mean(as.numeric(x))))
+dd_box_lambda$true_bin2_label <- factor(dd_box_lambda$true_bin2,
+                                        levels=sort(unique(dd_box_lambda$true_bin2), decreasing=TRUE),
+                                        labels=c("large", "small"))
+
+dd_box_theta$true_bin2 <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as.character(cut_interval(dd_box_theta$true, 2))), ","), function(x) mean(as.numeric(x))))
+dd_box_theta$true_bin2_label <- factor(dd_box_theta$true_bin2,
+                                        levels=sort(unique(dd_box_theta$true_bin2), decreasing=TRUE),
+                                        labels=c("large", "small"))
+
+
+dd_box_lambda %>%
     mutate(diff = est - true) %>%
-    group_by(method, var, true_bin_label, replicate) %>%
-    summarize(bias = mean(diff), variance = mean(diff^2)) %>%
-    mutate(var = factor(var, levels=c("lambda", "theta"), labels=c(expression(phantom("Ap")),expression(expression(phantom("Ap")))))) -> dd_box_lambda3
-dd_box_lambda3 %>% 
-    ggplot(mapping=aes(x=bias, y=sqrt(variance), shape=method, color=as.factor(true_bin_label))) +
+    group_by(method, var, true_bin2_label) %>%
+    summarize(bias = mean(diff), variance = sd(diff)) %>%
+    mutate(var = factor(var, levels=c("lambda", "theta"),
+         labels=c(expression(log(lambda)),expression(theta))))  %>% 
+    ggplot(mapping=aes(x=bias, y=variance, shape=method, label=method,
+                       color=as.factor(true_bin2_label))) +
     facet_wrap(~var, scales="free", labeller = label_parsed) +
     geom_vline(xintercept=0, linetype=2, color="gray") +
-    geom_point(size=3, stroke=.9, alpha=.3) +
-    geom_point(data=dd_box_lambda3 %>% filter(replicate==1), size=10, stroke=1.5) +
-    scale_shape_manual(values=c(1,3,4)) +
+    geom_text(size=5, key_glyph = "point") +
     scale_color_manual(values=rev(bg_colors)) +
     scale_x_continuous(expand = expansion(mult = .15)) +
     scale_y_continuous(expand = expansion(mult = .15)) +
-    xlab(expression("bias:"~log(hat(lambda))-log(lambda))) +
-    ylab(expression("variance: mean"(scriptstyle((log(hat(lambda))-log(lambda))^2)))) +
+    xlab(expression(phantom(log(widehat(lambda)))~"bias"~phantom(log(widehat(lambda))))) +
+    ylab(expression("standard deviation")) +
     theme(legend.position="none") -> p_bias_lambda
 
-dd_box_theta2 %>%
+dd_box_theta %>%
     mutate(diff = est - true) %>%
-    group_by(method, var, true_bin_label, replicate) %>%
-    summarize(bias = mean(diff), variance = mean(diff^2)) %>%
-    mutate(var = factor(var, levels=c("lambda", "theta"), labels=c(expression(log(phantom("Ap"))),expression(phantom("Ap"))))) -> dd_box_theta3
-dd_box_theta3 %>% filter(replicate!=1) %>%
-    ggplot(mapping=aes(x=bias, y=sqrt(variance), shape=method, color=as.factor(true_bin_label))) +
+    group_by(method, var, true_bin2_label) %>%
+    summarize(bias = mean(diff), variance = sd(diff)) %>%
+    mutate(var = factor(var, levels=c("lambda", "theta"),
+           labels=c(expression(expression(log(lambda))),expression(theta)))) %>%
+    ggplot(mapping=aes(x=bias, y=variance, shape=method, label=method,
+                       color=as.factor(true_bin2_label))) +
     facet_wrap(~var, scales="free", labeller = label_parsed) +
     geom_vline(xintercept=0, linetype=2, color="gray") +
-    geom_point(size=3, stroke=.9, alpha=.3) +
-    geom_point(data=dd_box_theta3 %>% filter(replicate==1), size=10, stroke=1.5) +
+    geom_text(size=5, key_glyph = "point") +
     scale_shape_manual(values=c(1,3,4)) +
     scale_color_manual(values=rev(bg_colors)) +
     scale_x_continuous(expand = expansion(mult = .15)) +
     scale_y_continuous(expand = expansion(mult = .15)) +
-    xlab(expression("bias:"~hat(theta)-theta)) +
-    ylab(expression("variance: mean"(scriptstyle((hat(theta)-theta)^2)))) +
+    xlab(expression(phantom(widegat(theta))~"bias"~phantom(widegat(theta)))) +
+    ylab(expression("standard deviation")) +
     theme(legend.position="none") -> p_bias_theta
 
-png("figs/fig_2_top.png", width=11, height=6, units="in", res=600)
+png("figs/1replicate_boxplot_bias.png", width=11, height=6, units="in", res=600)
 grid.arrange(grid.arrange(p_box_lambda, p_bias_lambda, ncol=2, widths=c(2.7,1), newpage=FALSE),
              grid.arrange(p_box_theta, p_bias_theta, ncol=2, widths=c(2.7,1), newpage=FALSE))
 dev.off()
@@ -162,13 +153,13 @@ im_m_pred_y <- cbind(apply(im_pred_y[,,1], c(1), mean),
 
 bg_colors <- brewer.pal(8, "Set1")[c(2,1)]
 mm_box_lambda <- rbind(data.frame(true=test_y[,1], est=im_m_pred_y[,1],
-                                  var="lambda", method="NI30"),
+                                  var="lambda", method="NF30"),
                        data.frame(true=test_y[,1], est=vg_rep_pred_y[,1],
                                   var="lambda", method="NV30"),
                        data.frame(true=test_y[,1], est=mc_pred_y[,1],
                                   var="lambda", method="ML30"))
 mm_box_lambda$method <- factor(mm_box_lambda$method,
-                               levels=c("NI30","NV30","ML30"))
+                               levels=c("NF30","NV30","ML30"))
 mm_box_lambda$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "",
                    as.character(cut_interval(mm_box_lambda$true, 10))), ","),
                                         function(x) mean(as.numeric(x))))
@@ -185,15 +176,14 @@ mm_box_lambda %>%
     geom_vline(xintercept = seq(-7.5,0,2.5), color="gray", size=.5) +
     geom_hline(yintercept = seq(-2,1,1), color="gray", size=.5) +
     geom_boxplot(width=.5) +
- #   stat_summary(fun=mean, geom="point", shape=20, size=5, color="red", fill="red") +
     xlab(expression(log(lambda)~phantom(log(hat(lambda))))) +
     ylab(expression(log(hat(lambda))-log(lambda))) +
       facet_wrap(method~.) +
     geom_abline(intercept=0, slope=0, color="red", linetype=2) -> p_box_lambda
-mm_box_theta <- rbind(data.frame(true=test_y[,2], est=im_m_pred_y[,2], var="theta", method="NI30"),
+mm_box_theta <- rbind(data.frame(true=test_y[,2], est=im_m_pred_y[,2], var="theta", method="NF30"),
       data.frame(true=test_y[,2], est=vg_rep_pred_y[,2], var="theta", method="NV30"),
       data.frame(true=test_y[,2], est=mc_pred_y[,2], var="theta", method="ML30")) 
-mm_box_theta$method <- factor(mm_box_theta$method, levels=c("NI30","NV30","ML30"))
+mm_box_theta$method <- factor(mm_box_theta$method, levels=c("NF30","NV30","ML30"))
 mm_box_theta$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as.character(cut_interval(mm_box_theta$true, 10))), ","), function(x) mean(as.numeric(x))))
 theta_color_bin <- sort(unique(unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "",
                    as.character(cut_interval(mm_box_theta$true, 10))), ","),
@@ -207,13 +197,12 @@ mm_box_theta %>%
     geom_vline(xintercept = seq(5,25,5), color="gray", size=.5) +
     geom_hline(yintercept = seq(-2,4,2), color="gray", size=.5) +
     geom_boxplot() +
- #   stat_summary(fun=mean, geom="point", shape=20, size=5, color="red", fill="red") +
       xlab(expression(theta~phantom(hat(theta)))) + ylab(expression(hat(theta)-theta)) +
       facet_wrap(method~.) +
     geom_abline(intercept=0, slope=0, color="red", linetype=2) -> p_box_theta
 
 mm_box_lambda2 <- rbind(data.frame(true=test_y[,1], est=c(im_m_pred_y[,1]), var="lambda",
-                                   method="NI30"),
+                                   method="NF30"),
                         data.frame(true=test_y[,1], est=c(vg_rep_pred_y[,1]), var="lambda",
                                    method="NV30"),
                         data.frame(true=test_y[,1], est=c(mc_pred_y[,1]), var="lambda",
@@ -222,14 +211,14 @@ mm_box_lambda2$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as
 mm_box_lambda2$true_bin_label <- factor(mm_box_lambda2$true_bin,
                                         levels=sort(unique(mm_box_lambda2$true_bin), decreasing=TRUE),
                                         labels=c("large", "small"))
-mm_box_lambda2$method <- factor(mm_box_lambda2$method, levels=c("NI30", "NV30", "ML30"))
+mm_box_lambda2$method <- factor(mm_box_lambda2$method, levels=c("NF30", "NV30", "ML30"))
 mm_box_theta2 <- rbind(data.frame(true=test_y[,2], est=c(im_m_pred_y[,2]), var="theta",
-                                  method="NI30"),
+                                  method="NF30"),
                        data.frame(true=test_y[,2], est=c(vg_rep_pred_y[,2]), var="theta",
                                   method="NV30"),
                        data.frame(true=test_y[,2], est=c(mc_pred_y[,2]), var="theta",
                                   method="ML30"))
-mm_box_theta2$method <- factor(mm_box_theta2$method, levels=c("NI30", "NV30", "ML30"))
+mm_box_theta2$method <- factor(mm_box_theta2$method, levels=c("NF30", "NV30", "ML30"))
 mm_box_theta2$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as.character(cut_interval(mm_box_theta2$true, 2))), ","), function(x) mean(as.numeric(x))))
 mm_box_theta2$true_bin_label <- factor(mm_box_theta2$true_bin,
                                        levels=sort(unique(mm_box_theta2$true_bin), decreasing=TRUE),
@@ -237,16 +226,16 @@ mm_box_theta2$true_bin_label <- factor(mm_box_theta2$true_bin,
 mm_box_lambda2 %>%
     mutate(diff = est - true) %>%
     group_by(method, var, true_bin_label) %>%
-    summarize(bias = mean(diff), variance = mean(diff^2))  %>%
-    mutate(var = factor(var, levels=c("lambda"), labels=c(expression(phantom("aAp"))))) %>%
-    ggplot(mapping=aes(x=bias, y=sqrt(variance), shape=method, color=as.factor(true_bin_label), label=method)) +
+    summarize(bias = mean(diff), variance = sd(diff))  %>%
+    mutate(var = factor(var, levels=c("lambda"), labels=c(expression("log(lambda)")))) %>%
+    ggplot(mapping=aes(x=bias, y=variance, shape=method, color=as.factor(true_bin_label), label=method)) +
     facet_wrap(~var, scales="free", labeller = label_parsed) +
     geom_vline(xintercept=0, linetype=2, color="gray") +
     geom_text(size=5, key_glyph = "point") +
     scale_shape_manual(values=c(1,3,4)) +
     scale_color_manual(values=rev(bg_colors)) +
-    xlab(expression("bias:"~log(hat(lambda))-log(lambda))) +
-    ylab(expression("variance: mean"(scriptstyle((log(hat(lambda))-log(lambda))^2)))) +
+    xlab(expression(phantom(log(widehat(lambda)))~"bias"~phantom(log(widehat(lambda))))) +
+    ylab(expression("standard deviation")) +
     scale_x_continuous(expand = expansion(mult = .15)) +
     scale_y_continuous(expand = expansion(mult = .05)) +
     theme(legend.position="none") -> p_bias_lambda
@@ -254,22 +243,22 @@ mm_box_lambda2 %>%
 mm_box_theta2 %>%
     mutate(diff = est - true) %>%
     group_by(method, var, true_bin_label) %>%
-    summarize(bias = mean(diff), variance = mean(diff^2))  %>%
-    mutate(var = factor(var, levels=c("theta"), labels=c(expression(phantom("aAp"))))) %>%
-    ggplot(mapping=aes(x=bias, y=sqrt(variance), shape=method, color=as.factor(true_bin_label), label=method)) +
+    summarize(bias = mean(diff), variance = sd(diff))  %>%
+    mutate(var = factor(var, levels=c("theta"), labels=c(expression(theta)))) %>%
+    ggplot(mapping=aes(x=bias, y=variance, shape=method, color=as.factor(true_bin_label), label=method)) +
     facet_wrap(~var, scales="free", labeller = label_parsed) +
     geom_vline(xintercept=0, linetype=2, color="gray") +
     geom_text(size=5, key_glyph = "point") +
     scale_shape_manual(values=c(1,3,4)) +
     scale_color_manual(values=rev(bg_colors)) +
-    xlab(expression("bias:"~hat(theta)-theta)) +
-    ylab(expression("variance: mean"(scriptstyle((hat(theta)-theta)^2)))) +
+    xlab(expression(phantom(widegat(theta))~"bias"~phantom(widegat(theta)))) +
+    ylab(expression("standard deviation")) +
     scale_x_continuous(expand = expansion(mult = .15)) +
     scale_y_continuous(expand = expansion(mult = .05)) +
     theme(legend.position="none") -> p_bias_theta
 
 
-png("figs/fig_2_bottom.png", width=11, height=6, units="in", res=600)
+png("figs/16replicate_boxplot_bias.png", width=11, height=6, units="in", res=600)
 grid.arrange(grid.arrange(p_box_lambda, p_bias_lambda, ncol=2, widths=c(2.7,1), newpage=FALSE),
              grid.arrange(p_box_theta, p_bias_theta, ncol=2, widths=c(2.7,1), newpage=FALSE))
 dev.off()
