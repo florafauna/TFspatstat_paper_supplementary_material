@@ -1,6 +1,6 @@
 # Supplementary material for the article: _Fast covariance parameter estimation of spatial Gaussian process models using neural networks_
 
-A pre-print is available on arXiv: ...
+A pre-print is available on arXiv: https://arxiv.org/abs/2012.15339
 
 This repository contains the scripts and data to reproduce the results presented in the article (simulation study and data illustration).
 It is structured as follows:
@@ -48,6 +48,7 @@ They can be generated using scripts in the (parent) folders.
 │   │   └── test_mle.rda
 │   ├── Rscripts
 │   │   └── MLESearchMatern.R
+│   ├── BFGS_optim_timing.R
 │   ├── run_data.R
 │   └── run_sim.R
 ├── 2_model_NI_NI30
