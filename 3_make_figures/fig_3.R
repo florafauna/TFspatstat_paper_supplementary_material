@@ -1,87 +1,250 @@
-## generate Fig. 3 of manuscript
-
 rm(list=ls())
-source("Rscripts/ggplot_theme.R")
-library(fields)
-library(FNN)
 library(reticulate); np <- import("numpy")
-
-load("../1_common_data/rda/slope.rda")
-
-
-pixel_width <- diff(range(lon)) / (length(lon)-1)
-pixel_height <- diff(range(lat)) / (length(lat)-1)
-
-map_layers <- list(coord_cartesian(xlim = range(lon) + c(-1,1)*pixel_width/2,
-                                   ylim = range(lat) + c(-1,1)*pixel_height/2,
-                                   expand = FALSE),
-                   geom_tile(),
-                   geom_world(),
-                   theme(axis.title.x=element_blank(),
-                         axis.text.x=element_blank(),
-                         axis.ticks.x=element_blank(),
-                         axis.title.y=element_blank(),
-                         axis.text.y=element_blank(),
-                         axis.ticks.y=element_blank()),
-                   facet_wrap(what ~. ))
+source("Rscripts/ggplot_theme.R")
+mae <- function(x, y) mean(abs(x-y))
+rmspe <- function(x, y) sqrt(mean((x-y)^2))
+lighten <- .8
 
 
 
-rect1 <- c(45, 95)
-rect2 <- c(95, 65)
+## testObj with true values
+test_y <- np$load("../common_data/npy/test_y.npy")
 
-data.frame(x=lon, y=rep(lat, each=length(lon)), z=c(slope_x[,,1]),
-           what = "slope (1 of 30 replicates)") %>%
-    ggplot(mapping=aes(x=x, y=y, fill=z)) +
-    map_layers +
-    geom_rect(xmin=lon[rect1[1]]-.7, xmax=lon[rect1[1]+15]+.7,
-              ymin=lat[rect1[2]]-.5, ymax=lat[rect1[2]+15]+.5,
-              fill=NA, color="black") + 
-    geom_rect(xmin=lon[rect1[1]]-.7, xmax=lon[rect1[1]+15]+.7,
-              ymin=lat[rect1[2]]-.5, ymax=lat[rect1[2]+15]+.5,
-              fill=NA, color="violetred1", linetype="bb") + 
-    geom_rect(xmin=lon[rect2[1]]-.7, xmax=lon[rect2[1]+15]+.7,
-              ymin=lat[rect2[2]]-.5, ymax=lat[rect2[2]+15]+.5,
-              fill=NA, color="black") + 
-    geom_rect(xmin=lon[rect2[1]]-.7, xmax=lon[rect2[1]+15]+.7,
-              ymin=lat[rect2[2]]-.5, ymax=lat[rect2[2]+15]+.5, fill=NA,
-              color="orange", linetype="bb") + 
-    scale_fill_gradientn(colors=viridis(256)) +
-    guides(fill = guide_colorbar(title = "",
-            barwidth = barwidth, barheight = barheight, label.position = "left", 
-            legend.position = c(0, 0),  ticks.colour = "black",
-            frame.colour="black"))+ theme(legend.position="left") +
-    xlab(" ") -> map_s1
+## 'test_mle_c' (channelwise MLE) and ' mleComb' combined MLE 
+
+gs_one_pred_y <- np$load("../model_gstat/npy/test_pred_model_gstat_one.npy")
+cl_one_pred_y <- np$load("../model_composite/npy/test_pred_model_composite_one.npy")
+gs_one_pred_y[,1] <- log(gs_one_pred_y[,1])
+cl_one_pred_y[,1] <- log(cl_one_pred_y[,1])
 
 
-im1 <- slope_x[rect1[1]:(rect1[1]+15),rect1[2]:(rect1[2]+15),]
-im2 <- slope_x[rect2[1]:(rect2[1]+15),rect2[2]:(rect2[2]+15),]
+gs_rep_pred_y <- np$load("../model_gstat/npy/test_pred_model_gstat.npy")
+cl_rep_pred_y <- np$load("../model_composite/npy/test_pred_model_composite.npy")
+gs_rep_pred_y[,1] <- log(gs_rep_pred_y[,1])
+mean(!is.finite(gs_rep_pred_y[,1]))
+gs_rep_pred_y[,1][!is.finite(gs_rep_pred_y[,1])] <- min(gs_rep_pred_y[,1][is.finite(gs_rep_pred_y[,1])])
+cl_rep_pred_y[,1] <- log(cl_rep_pred_y[,1])
 
-vg1 <- lapply(1:30, function(i) vgram.matrix(im1[,,i], R=16))
-dvg1 <- data.frame(d=vg1[[1]]$d, vg=unlist(lapply(vg1, function(x) x$vgram)),
-           id=rep(1:30, each=length(vg1[[1]]$d)), type="variograms for left subset")
-vg2 <- lapply(1:30, function(i) vgram.matrix(im2[,,i], R=16))
-dvg2 <- data.frame(d=vg2[[1]]$d, vg=unlist(lapply(vg2, function(x) x$vgram)),
-           id=rep(1:30, each=length(vg2[[1]]$d)), type="variograms for right subset")
 
-ggplot(rbind(dvg1, dvg2),
-       aes(x=d, y=vg, group=interaction(id, type), color=type)) + 
-    geom_point(alpha=1, size=.1) +
-    geom_smooth(se=FALSE, size=.3, color="black") +
-    facet_wrap(type~., ncol=2) +
-    scale_color_manual(values=c("violetred1", "orange"), guide=FALSE) +
-    coord_cartesian(ylim=c(0.1, 4.4)) +
-    xlab("distance") +
-    ylab("variogram") +
-    theme(strip.background = element_blank()) -> plot_vgrams
+## ## comparison of one replicate case -------------------------
+## bg_colors <- brewer.pal(8, "Set1")[c(2,1)]
+## dd_box_lambda <- rbind(data.frame(true=test_y[,1], est=gs_one_pred_y[,1],
+##                                   var="lambda", method="GS"),
+##                        data.frame(true=test_y[,1], est=cl_one_pred_y[,1],
+##                                   var="lambda", method="CL"))
+## dd_box_lambda$method <- factor(dd_box_lambda$method, levels=c("GS","CL"))
+## dd_box_lambda$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "",
+##                    as.character(cut_interval(dd_box_lambda$true, 10))), ","),
+##                                         function(x) mean(as.numeric(x))))
+## lambda_color_bin <- sort(unique(unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "",
+##                    as.character(cut_interval(dd_box_lambda$true, 10))), ","),
+##                                         function(x) (as.numeric(x)[2])))))
+## dd_box_lambda$color_bin <- cut_interval(dd_box_lambda$true, 2)
+## dd_box_lambda %>%
+##    ggplot(aes(x=true_bin, y=est-true, group=true_bin) ) +
+##     geom_rect(xmin=-Inf, xmax=lambda_color_bin[5], ymin=-Inf, ymax=Inf,
+##               fill=lighten(bg_colors[1], lighten)) +
+##     geom_rect(xmin=lambda_color_bin[5], xmax=Inf, ymin=-Inf, ymax=Inf,
+##               fill=lighten(bg_colors[2], lighten))+
+##     geom_vline(xintercept = seq(-7.5,0,2.5), color="gray", size=.5) +
+##     geom_hline(yintercept = seq(-4,2,2), color="gray", size=.5) +
+##     geom_boxplot(width=.5) +
+##     xlab(expression(log(lambda)~phantom(log(hat(lambda))))) +
+##     ylab(expression(log(hat(lambda))-log(lambda))) +
+##       facet_wrap(method~.) +
+##     geom_abline(intercept=0, slope=0, color="red", linetype=2) -> p_box_lambda
 
-dir.create("figs", showWarnings=FALSE)
-png("figs/fig_3.png", width=10, height=3.4, units="in", res=600)
-grid.arrange(map_s1+
-             theme(plot.margin = theme_get()$plot.margin*c(1,1,3,1)),
-             plot_vgrams +
-             theme(plot.margin = theme_get()$plot.margin*c(1,1,1,5),
-                   axis.title=element_text(size=8)),
-             ncol=2, widths=c(1.2,2),
-             padding = unit(10.5, "line"))
+## dd_box_theta <- rbind(
+##     data.frame(true=test_y[,2], est=gs_one_pred_y[,2], var="theta", method="GS"),
+##     data.frame(true=test_y[,2], est=cl_one_pred_y[,2], var="theta", method="CL")) 
+## dd_box_theta$method <- factor(dd_box_theta$method, levels=c("GS","CL"))
+## dd_box_theta$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as.character(cut_interval(dd_box_theta$true, 10))), ","), function(x) mean(as.numeric(x))))
+## theta_color_bin <- sort(unique(unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "",
+##                    as.character(cut_interval(dd_box_theta$true, 10))), ","),
+##                    function(x) (as.numeric(x)[2])))))
+## dd_box_theta %>%
+##    ggplot(aes(x=true_bin, y=est-true, group=true_bin) ) +
+##     geom_rect(xmin=-Inf, xmax=theta_color_bin[5], ymin=-Inf, ymax=Inf,
+##               fill=lighten(bg_colors[1], lighten)) +
+##     geom_rect(xmin=theta_color_bin[5], xmax=Inf, ymin=-Inf, ymax=Inf,
+##               fill=lighten(bg_colors[2], lighten)) +
+##     geom_vline(xintercept = seq(5,25,5), color="gray", size=.5) +
+##     geom_hline(yintercept = seq(-10,20,10), color="gray", size=.5) +
+##     geom_boxplot() +
+##     xlab(expression(theta~phantom(hat(theta)))) +
+##     ylab(expression(hat(theta)-theta)) +
+##       facet_wrap(method~.) +
+##     geom_abline(intercept=0, slope=0, color="red", linetype=2) -> p_box_theta
+
+
+
+## dd_box_lambda$true_bin2 <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as.character(cut_interval(dd_box_lambda$true, 2))), ","), function(x) mean(as.numeric(x))))
+## dd_box_lambda$true_bin2_label <- factor(dd_box_lambda$true_bin2,
+##                                         levels=sort(unique(dd_box_lambda$true_bin2), decreasing=TRUE),
+##                                         labels=c("large", "small"))
+
+## dd_box_theta$true_bin2 <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as.character(cut_interval(dd_box_theta$true, 2))), ","), function(x) mean(as.numeric(x))))
+## dd_box_theta$true_bin2_label <- factor(dd_box_theta$true_bin2,
+##                                         levels=sort(unique(dd_box_theta$true_bin2), decreasing=TRUE),
+##                                         labels=c("large", "small"))
+
+
+## dd_box_lambda %>%
+##     mutate(diff = est - true) %>%
+##     group_by(method, var, true_bin2_label) %>%
+##     summarize(bias = mean(diff), variance = sd(diff)) %>%
+##     mutate(var = factor(var, levels=c("lambda", "theta"),
+##          labels=c(expression(log(lambda)),expression(theta))))  %>% 
+##     ggplot(mapping=aes(x=bias, y=variance, shape=method, label=method,
+##                        color=as.factor(true_bin2_label))) +
+##     facet_wrap(~var, scales="free", labeller = label_parsed) +
+##     geom_vline(xintercept=0, linetype=2, color="gray25") +
+##     geom_text(size=5, key_glyph = "point") +
+##     scale_color_manual(values=rev(bg_colors)) +
+##     scale_x_continuous(expand = expansion(mult = .15)) +
+##     scale_y_continuous(expand = expansion(mult = .15)) +
+##     xlab(expression(phantom(log(widehat(lambda)))~"bias"~phantom(log(widehat(lambda))))) +
+##     ylab(expression("standard deviation")) +
+##     theme(legend.position="none") -> p_bias_lambda
+
+## dd_box_theta %>%
+##     mutate(diff = est - true) %>%
+##     group_by(method, var, true_bin2_label) %>%
+##     summarize(bias = mean(diff), variance = sd(diff)) %>%
+##     mutate(var = factor(var, levels=c("lambda", "theta"),
+##            labels=c(expression(expression(log(lambda))),expression(theta)))) %>%
+##     ggplot(mapping=aes(x=bias, y=variance, shape=method, label=method,
+##                        color=as.factor(true_bin2_label))) +
+##     facet_wrap(~var, scales="free", labeller = label_parsed) +
+##     geom_vline(xintercept=0, linetype=2, color="gray25") +
+##     geom_text(size=5, key_glyph = "point") +
+##     scale_shape_manual(values=c(1,3,4)) +
+##     scale_color_manual(values=rev(bg_colors)) +
+##     scale_x_continuous(expand = expansion(mult = .15)) +
+##     scale_y_continuous(expand = expansion(mult = .15)) +
+##     xlab(expression(phantom(widegat(theta))~"bias"~phantom(widegat(theta)))) +
+##     ylab(expression("standard deviation")) +
+##     theme(legend.position="none") -> p_bias_theta
+
+## png("figs/1replicate_boxplot_bias_alt.png", width=11, height=6, units="in", res=600)
+## grid.arrange(grid.arrange(p_box_lambda, p_bias_lambda, ncol=2, widths=c(2.7,1), newpage=FALSE),
+##              grid.arrange(p_box_theta, p_bias_theta, ncol=2, widths=c(2.7,1), newpage=FALSE))
+## dev.off()
+
+
+
+
+
+
+## comparison of 16 replicate case -------------------------
+## boxplot and bias
+bg_colors <- brewer.pal(8, "Set1")[c(2,1)]
+mm_box_lambda <- rbind(data.frame(true=test_y[,1], est=gs_rep_pred_y[,1],
+                                  var="lambda", method="GS30"),
+                       data.frame(true=test_y[,1], est=cl_rep_pred_y[,1],
+                                  var="lambda", method="CL30"))
+mm_box_lambda$method <- factor(mm_box_lambda$method,
+                               levels=c("GS30","CL30"))
+mm_box_lambda$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "",
+                   as.character(cut_interval(mm_box_lambda$true, 10))), ","),
+                                        function(x) mean(as.numeric(x))))
+lambda_color_bin <- sort(unique(unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "",
+                   as.character(cut_interval(mm_box_lambda$true, 10))), ","),
+                                        function(x) (as.numeric(x)[2])))))
+mm_box_lambda$color_bin <- cut_interval(mm_box_lambda$true, 2)
+mm_box_lambda %>%
+   ggplot(aes(x=true_bin, y=est-true, group=true_bin) ) +
+    geom_rect(xmin=-Inf, xmax=lambda_color_bin[5], ymin=-Inf, ymax=Inf,
+              fill=lighten(bg_colors[1], lighten)) +
+    geom_rect(xmin=lambda_color_bin[5], xmax=Inf, ymin=-Inf, ymax=Inf,
+              fill=lighten(bg_colors[2], lighten))+
+    geom_vline(xintercept = seq(-7.5,0,2.5), color="gray", size=.5) +
+    geom_hline(yintercept = seq(-30,0,10), color="gray", size=.5) +
+    geom_boxplot(width=.5) +
+    xlab(expression(log(lambda)~phantom(log(hat(lambda))))) +
+    ylab(expression(log(hat(lambda))-log(lambda))) +
+      facet_wrap(method~.) +
+    geom_abline(intercept=0, slope=0, color="red", linetype=2) -> p_box_lambda
+
+mm_box_theta <- rbind(data.frame(true=test_y[,2], est=gs_rep_pred_y[,2],
+                                 var="theta", method="GS30"),
+                      data.frame(true=test_y[,2], est=cl_rep_pred_y[,2],
+                                 var="theta", method="CL30")) 
+mm_box_theta$method <- factor(mm_box_theta$method, levels=c("GS30","CL30"))
+mm_box_theta$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as.character(cut_interval(mm_box_theta$true, 10))), ","), function(x) mean(as.numeric(x))))
+theta_color_bin <- sort(unique(unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "",
+                   as.character(cut_interval(mm_box_theta$true, 10))), ","),
+                   function(x) (as.numeric(x)[2])))))
+mm_box_theta %>%
+   ggplot(aes(x=true_bin, y=est-true, group=true_bin) ) +
+        geom_rect(xmin=-Inf, xmax=theta_color_bin[5], ymin=-Inf, ymax=Inf,
+              fill=lighten(bg_colors[1], lighten))+
+    geom_rect(xmin=theta_color_bin[5], xmax=Inf, ymin=-Inf, ymax=Inf,
+              fill=lighten(bg_colors[2], lighten))+
+    geom_vline(xintercept = seq(5,25,5), color="gray", size=.5) +
+    geom_hline(yintercept = seq(-10,30,10), color="gray", size=.5) +
+    geom_boxplot() +
+      xlab(expression(theta~phantom(hat(theta)))) + ylab(expression(hat(theta)-theta)) +
+      facet_wrap(method~.) +
+    geom_abline(intercept=0, slope=0, color="red", linetype=2) -> p_box_theta
+
+mm_box_lambda2 <- rbind(data.frame(true=test_y[,1], est=c(gs_rep_pred_y[,1]), var="lambda",
+                                   method="GS30"),
+                        data.frame(true=test_y[,1], est=c(cl_rep_pred_y[,1]), var="lambda",
+                                   method="CL30"))
+mm_box_lambda2$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as.character(cut_interval(mm_box_lambda2$true, 2))), ","), function(x) mean(as.numeric(x))))
+mm_box_lambda2$true_bin_label <- factor(mm_box_lambda2$true_bin,
+                                        levels=sort(unique(mm_box_lambda2$true_bin), decreasing=TRUE),
+                                        labels=c("large", "small"))
+mm_box_lambda2$method <- factor(mm_box_lambda2$method, levels=c("GS30", "CL30"))
+
+mm_box_theta2 <- rbind(data.frame(true=test_y[,2], est=c(gs_rep_pred_y[,2]), var="theta",
+                                  method="GS30"),
+                       data.frame(true=test_y[,2], est=c(cl_rep_pred_y[,2]), var="theta",
+                                  method="CL30"))
+mm_box_theta2$method <- factor(mm_box_theta2$method, levels=c("GS30", "CL30"))
+mm_box_theta2$true_bin <- unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "", as.character(cut_interval(mm_box_theta2$true, 2))), ","), function(x) mean(as.numeric(x))))
+mm_box_theta2$true_bin_label <- factor(mm_box_theta2$true_bin,
+                                       levels=sort(unique(mm_box_theta2$true_bin), decreasing=TRUE),
+                                       labels=c("large", "small"))
+mm_box_lambda2 %>%
+    mutate(diff = est - true) %>%
+    group_by(method, var, true_bin_label) %>%
+    summarize(bias = mean(diff), variance = sd(diff))  %>%
+    mutate(var = factor(var, levels=c("lambda"), labels=c(expression("log(lambda)")))) %>%
+    ggplot(mapping=aes(x=bias, y=variance, shape=method, color=as.factor(true_bin_label), label=method)) +
+    facet_wrap(~var, scales="free", labeller = label_parsed) +
+    geom_vline(xintercept=0, linetype=2, color="gray25") +
+    geom_text(size=5, key_glyph = "point") +
+    scale_shape_manual(values=c(1,3,4)) +
+    scale_color_manual(values=rev(bg_colors)) +
+    xlab(expression(phantom(log(widehat(lambda)))~"bias"~phantom(log(widehat(lambda))))) +
+    ylab(expression("standard deviation")) +
+    scale_x_continuous(expand = expansion(mult = .25)) +
+    scale_y_continuous(expand = expansion(mult = .05)) +
+    theme(legend.position="none") -> p_bias_lambda
+
+mm_box_theta2 %>%
+    mutate(diff = est - true) %>%
+    group_by(method, var, true_bin_label) %>%
+    summarize(bias = mean(diff), variance = sd(diff))  %>%
+    mutate(var = factor(var, levels=c("theta"), labels=c(expression(theta)))) %>%
+    ggplot(mapping=aes(x=bias, y=variance, shape=method, color=as.factor(true_bin_label), label=method)) +
+    facet_wrap(~var, scales="free", labeller = label_parsed) +
+    geom_vline(xintercept=0, linetype=2, color="gray25") +
+    geom_text(size=5, key_glyph = "point") +
+    scale_shape_manual(values=c(1,3,4)) +
+    scale_color_manual(values=rev(bg_colors)) +
+    xlab(expression(phantom(widegat(theta))~"bias"~phantom(widegat(theta)))) +
+    ylab(expression("standard deviation")) +
+    scale_x_continuous(expand = expansion(mult = .25)) +
+    scale_y_continuous(expand = expansion(mult = .05)) +
+    theme(legend.position="none") -> p_bias_theta
+
+
+#pdf("figs/16replicate_boxplot_bias.pdf", width=11, height=6)
+png("figs/16replicate_boxplot_bias_alt.png", width=8, height=6, units="in", res=600)
+grid.arrange(grid.arrange(p_box_lambda, p_bias_lambda, ncol=2, widths=c(1.8,1), newpage=FALSE),
+             grid.arrange(p_box_theta, p_bias_theta, ncol=2, widths=c(1.8,1), newpage=FALSE))
 dev.off()
+

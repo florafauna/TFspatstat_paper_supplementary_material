@@ -51,6 +51,14 @@ They can be generated using scripts in the (parent) folders.
 │   ├── BFGS_optim_timing.R
 │   ├── run_data.R
 │   └── run_sim.R
+├── 2_model_GS_GS30
+│   ├── npy
+│   │   └── test_pred_model_gstat.npy
+│   └── run_sim.R
+├── 2_model_GS_GS30
+│   ├── npy
+│   │   └── test_pred_model_composite.npy
+│   └── run_sim.R
 ├── 2_model_NI_NI30
 │   ├── model_NI
 │   │   ├── assets
@@ -111,14 +119,16 @@ They can be generated using scripts in the (parent) folders.
 │   ├── fig_1.R
 │   ├── fig_2.R
 │   ├── fig_3.R
-│   ├── fig_4_5.R
+│   ├── fig_4.R
+│   ├── fig_5_6.R
 │   ├── figs
 │   │   ├── fig_1.png
 │   │   ├── fig_2_bottom.png
 │   │   ├── fig_2_top.png
 │   │   ├── fig_3.png
 │   │   ├── fig_4.png
-│   │   └── fig_5.png
+│   │   ├── fig_5.png
+│   │   └── fig_6.png
 │   └── Rscripts
 │       └── ggplot_theme.R
 └── README.md
