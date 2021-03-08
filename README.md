@@ -55,7 +55,7 @@ They can be generated using scripts in the (parent) folders.
 │   ├── npy
 │   │   └── test_pred_model_gstat.npy
 │   └── run_sim.R
-├── 2_model_GS_GS30
+├── 2_model_CL_CL30
 │   ├── npy
 │   │   └── test_pred_model_composite.npy
 │   └── run_sim.R
