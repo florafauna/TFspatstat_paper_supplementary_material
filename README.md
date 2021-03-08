@@ -10,9 +10,11 @@ It is structured as follows:
 * **2_model_NV/**: train the NV model and use it to estimate parameters for the test data of the study
 * **2_model_NV30/**: train the NV30 model and use it to estimate parameters for simulation study and the climate data
 * **2_model_ML_ML30/**: train the ML and ML30 models and use them to estimate parameters for simulation study and the climate data
+* **2_model_GS30/**: train the GS30 models and use them to estimate parameters for simulation study
+* **2_model_CL30/**: train the CL30 models and use them to estimate parameters for simulation study
 * **3_make_figures/**: make the figures of the manuscript
 
-We recommend running the scripts in that order because of dependencies. 
+We recommend running the scripts in this order because of dependencies. 
 
 
 ## A complete oververview:
