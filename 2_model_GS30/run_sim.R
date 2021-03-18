@@ -1,7 +1,7 @@
 rm(list=ls())
 library(abind)
 library(doParallel)
-registerDoParallel(12)
+registerDoParallel(80)
 library(fields)
 library(reticulate); np <- import("numpy")
 library(parallel)
@@ -31,7 +31,8 @@ getMeanVg <- function(im # 30 images
 }
 codetools::findGlobals(getMeanVg, merge=FALSE)$variables
 
-start_values <- test_y[sample.int(nrow(test_y), size=nrow(test_y), replace=TRUE), ]
+#start_values <- test_y[sample.int(nrow(test_y), size=nrow(test_y), replace=TRUE), ]
+start_values <- test_y
 
 system.time(
 fit <- foreach(i = 1:dim(test_x)[1], .combine="rbind") %dopar% {
@@ -54,7 +55,7 @@ fit <- foreach(i = 1:dim(test_x)[1], .combine="rbind") %dopar% {
 any(!is.finite(fit))
 
 dir.create("npy", showWarnings=FALSE)
-np$save("npy/test_pred_model_gstat.npy", r_to_py(fit))
+np$save("npy/test_pred_model_gstat_perfect_start_values.npy", r_to_py(fit))
 
 
 system.time(
@@ -78,6 +79,6 @@ fit_one <- foreach(i = 1:dim(test_x)[1], .combine="rbind") %dopar% {
 any(!is.finite(fit))
 
 dir.create("npy", showWarnings=FALSE)
-np$save("npy/test_pred_model_gstat_one.npy", r_to_py(fit_one))
+np$save("npy/test_pred_model_gstat_one_perfect_start_values.npy", r_to_py(fit_one))
 
 

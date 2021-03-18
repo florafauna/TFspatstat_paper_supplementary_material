@@ -2,7 +2,7 @@ rm(list=ls())
 library(fields)
 library(CompRandFld)
 library(reticulate); np <- import("numpy")
-library(doParallel); registerDoParallel(24)
+library(doParallel); registerDoParallel(80)
 library(sp)
 library(gapfill)
 library(abind)
@@ -15,7 +15,8 @@ data <- test_x
 dim(data) <- c(dim(data)[1], dim(data)[2]*dim(data)[3], dim(data)[4])
 data <- aperm(data, c(1,3,2))
 
-start_values <- test_y[sample.int(nrow(test_y), size=dim(data)[1], replace=TRUE), ]
+## start_values <- test_y[sample.int(nrow(test_y), size=dim(data)[1], replace=TRUE), ]
+start_values <- test_y
 
 
 system.time(
@@ -33,7 +34,8 @@ system.time(
                             start=list(nugget=exp(start_values[i,1]),
                                        scale=start_values[i,2]),
                             fixed=list(mean=0, sill=1, smooth=1),
-                            replicates=30))
+                            replicates=30,
+                            optimizer="L-BFGS-B"))
     if(is(fit, "try-error"))
         o <- c(NA,NA)
     else
@@ -49,4 +51,4 @@ abline(a=0, b=0, col="green")
 
 
 dir.create("npy", showWarnings=FALSE)
-np$save("npy/test_pred_model_composite.npy", r_to_py(fit))
+np$save("npy/test_pred_model_composite_perfect_start_values_lbfgsb.npy", r_to_py(fit))

@@ -47,13 +47,14 @@ lambda_color_bin <- sort(unique(unlist(lapply(strsplit(gsub("(\\()|(\\])|\\[", "
                                         function(x) (as.numeric(x)[2])))))
 dd_box_lambda$color_bin <- cut_interval(dd_box_lambda$true, 2)
 dd_box_lambda %>%
-   ggplot(aes(x=true_bin, y=est-true, group=true_bin) ) +
+   ggplot(aes(x=true_bin, y=est-true, group=true_bin)) +
     geom_rect(xmin=-Inf, xmax=lambda_color_bin[5], ymin=-Inf, ymax=Inf,
               fill=lighten(bg_colors[1], lighten)) +
     geom_rect(xmin=lambda_color_bin[5], xmax=Inf, ymin=-Inf, ymax=Inf,
-              fill=lighten(bg_colors[2], lighten))+
+              fill=lighten(bg_colors[2], lighten)) +
     geom_vline(xintercept = seq(-7.5,0,2.5), color="gray", size=.5) +
     geom_hline(yintercept = seq(-4,2,2), color="gray", size=.5) +
+    scale_y_continuous(breaks = seq(-4,2,2)) +
     geom_boxplot(width=.5) +
     xlab(expression(log(lambda)~phantom(log(hat(lambda))))) +
     ylab(expression(log(hat(lambda))-log(lambda))) +
@@ -80,7 +81,7 @@ dd_box_theta %>%
     geom_boxplot() +
     xlab(expression(theta~phantom(hat(theta)))) +
     ylab(expression(hat(theta)-theta)) +
-      facet_wrap(method~.) +
+    facet_wrap(method~.) +
     geom_abline(intercept=0, slope=0, color="red", linetype=2) -> p_box_theta
 
 
@@ -108,7 +109,7 @@ dd_box_lambda %>%
     ggplot(mapping=aes(x=bias, y=variance, shape=method, label=method,
                        color=as.factor(true_bin2_label))) +
     facet_wrap(~var, scales="free", labeller = label_parsed) +
-    geom_vline(xintercept=0, linetype=2, color="gray") +
+    geom_vline(xintercept=0, linetype=2, color="gray25") +
     geom_text(size=5, key_glyph = "point") +
     scale_color_manual(values=rev(bg_colors)) +
     scale_x_continuous(expand = expansion(mult = .15)) +
@@ -126,7 +127,7 @@ dd_box_theta %>%
     ggplot(mapping=aes(x=bias, y=variance, shape=method, label=method,
                        color=as.factor(true_bin2_label))) +
     facet_wrap(~var, scales="free", labeller = label_parsed) +
-    geom_vline(xintercept=0, linetype=2, color="gray") +
+    geom_vline(xintercept=0, linetype=2, color="gray25") +
     geom_text(size=5, key_glyph = "point") +
     scale_shape_manual(values=c(1,3,4)) +
     scale_color_manual(values=rev(bg_colors)) +
@@ -136,7 +137,7 @@ dd_box_theta %>%
     ylab(expression("standard deviation")) +
     theme(legend.position="none") -> p_bias_theta
 
-png("figs/1replicate_boxplot_bias.png", width=11, height=6, units="in", res=600)
+png("figs/fig_2a.png", width=11, height=6, units="in", res=600)
 grid.arrange(grid.arrange(p_box_lambda, p_bias_lambda, ncol=2, widths=c(2.7,1), newpage=FALSE),
              grid.arrange(p_box_theta, p_bias_theta, ncol=2, widths=c(2.7,1), newpage=FALSE))
 dev.off()
@@ -230,7 +231,7 @@ mm_box_lambda2 %>%
     mutate(var = factor(var, levels=c("lambda"), labels=c(expression("log(lambda)")))) %>%
     ggplot(mapping=aes(x=bias, y=variance, shape=method, color=as.factor(true_bin_label), label=method)) +
     facet_wrap(~var, scales="free", labeller = label_parsed) +
-    geom_vline(xintercept=0, linetype=2, color="gray") +
+    geom_vline(xintercept=0, linetype=2, color="gray25") +
     geom_text(size=5, key_glyph = "point") +
     scale_shape_manual(values=c(1,3,4)) +
     scale_color_manual(values=rev(bg_colors)) +
@@ -247,7 +248,7 @@ mm_box_theta2 %>%
     mutate(var = factor(var, levels=c("theta"), labels=c(expression(theta)))) %>%
     ggplot(mapping=aes(x=bias, y=variance, shape=method, color=as.factor(true_bin_label), label=method)) +
     facet_wrap(~var, scales="free", labeller = label_parsed) +
-    geom_vline(xintercept=0, linetype=2, color="gray") +
+    geom_vline(xintercept=0, linetype=2, color="gray25") +
     geom_text(size=5, key_glyph = "point") +
     scale_shape_manual(values=c(1,3,4)) +
     scale_color_manual(values=rev(bg_colors)) +
@@ -258,7 +259,7 @@ mm_box_theta2 %>%
     theme(legend.position="none") -> p_bias_theta
 
 
-png("figs/16replicate_boxplot_bias.png", width=11, height=6, units="in", res=600)
+png("figs/fig_2b.png", width=11, height=6, units="in", res=600)
 grid.arrange(grid.arrange(p_box_lambda, p_bias_lambda, ncol=2, widths=c(2.7,1), newpage=FALSE),
              grid.arrange(p_box_theta, p_bias_theta, ncol=2, widths=c(2.7,1), newpage=FALSE))
 dev.off()
