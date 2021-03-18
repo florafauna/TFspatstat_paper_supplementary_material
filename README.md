@@ -28,7 +28,7 @@ They can be generated using scripts in the (parent) folders.
 │   ├── makeTrainingData.R
 │   ├── npy
 │   │   ├── # test_x.npy 
-│   │   ├── # test_y.npy
+│   │   ├── test_y.npy
 │   │   ├── # training_201_200_alphaMat.npy
 │   │   ├── # training_201_200_chols.npy
 │   │   ├── # training_201_200_df.npy
@@ -53,13 +53,13 @@ They can be generated using scripts in the (parent) folders.
 │   ├── BFGS_optim_timing.R
 │   ├── run_data.R
 │   └── run_sim.R
-├── 2_model_GS_GS30
+├── 2_model_GS30
 │   ├── npy
-│   │   └── test_pred_model_gstat.npy
+│   │   └── test_pred_model_gstat_perfect_start_values.npy
 │   └── run_sim.R
-├── 2_model_CL_CL30
+├── 2_model_CL30
 │   ├── npy
-│   │   └── test_pred_model_composite.npy
+│   │   └── test_pred_model_composite_perfect_start_values_lbfgsb.npy
 │   └── run_sim.R
 ├── 2_model_NI_NI30
 │   ├── model_NI
